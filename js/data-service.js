@@ -8,15 +8,15 @@ var ParadoxScout = ParadoxScout || {};
 
 ParadoxScout.DataService = (function() {
   // private attributes
-  var dbRootUrl = '{{ site.scout.firebase }}',
+  var dbRootUrl = "{{ site.scout.firebase.rooturl }}",
   // dbRef = new Firebase(dbRootUrl),   // init firebase db
   // Initialize Firebase
   config = {
-    apiKey: "AIzaSyDleJPx9RQChKn4DlLV9nXqMNafP7BvhG0",
-    authDomain: "paradox-scout-dc256.firebaseapp.com",
-    databaseURL: "https://paradox-scout-dc256.firebaseio.com",
-    storageBucket: "paradox-scout-dc256.appspot.com",
-    messagingSenderId: "777517430963"
+    apiKey: "{{ site.scout.firebase.apikey }}",
+    authDomain: "{{ site.scout.firebase.authdomain }}",
+    databaseURL: "{{ site.scout.firebase.databaseurl }}",
+    storageBucket: "{{ site.scout.firebase.storagebucket }}",
+    messagingSenderId: "{{ site.scout.firebase.messagingsenderid }}"
   },
   dbRef = firebase.initializeApp(config).database().ref(),
   dbUsersRef = dbRef.child('users'), 
@@ -112,26 +112,15 @@ ParadoxScout.DataService = (function() {
   getCurrentUser = function(next) {
     // get auth and provider data
     var user = firebase.auth().currentUser; //dbRef.getAuth();
-    var providerId = user === null ? null : authData.providerId;
 
     if (user && user.email) {
       // try getting from cache first
-      if (providerId === 'github.com' || providerId === 'google.com') {
-        next({ 
-          key: cleanUserKey(user.email), 
-          email: user.email, 
-          name: user.displayName || user.email
+      next({ 
+        key: cleanUserKey(user.email), 
+        email: user.email, 
+        name: user.displayName || user.email
         });
       }
-      else {
-        var user_key = cleanUserKey(user.email);
-        dbRef.child('users').child(user_key).once('value', function(userSnapshot) {
-          var u = userSnapshot.val();
-          u.key = userSnapshot.key;
-          next(u);
-        });
-      }
-    }
     else {
       logout();
       next(null);
@@ -362,20 +351,19 @@ ParadoxScout.DataService = (function() {
                 return record.team_key === teamKey;
               });
 
+              // add default data
               teams[teamKey] = match;
               teams[teamKey].team_key = teamKey;
-              teams[teamKey].team_number = parseInt(t.team_number);
-              teams[teamKey].team_name = t.team_name; 
+              teams[teamKey].team_number = parseInt(t ? t.team_number : teamKey.replace('frc',''));
+              teams[teamKey].team_name = (t ? t.team_name : teamKey); 
               teams[teamKey].oprs = teamDetails.oprs;
               teams[teamKey].ccwms = teamDetails.ccwms;
               teams[teamKey].dprs = teamDetails.dprs;
-              teams[teamKey].ranking = teamDetails.ranking || 0;
-              teams[teamKey].rankingScore = teamDetails.rankingScore || 0;
-              teams[teamKey].rankingAuto = teamDetails.rankingAuto || 0;
-              teams[teamKey].rankingScaleChallenge = teamDetails.rankingScaleChallenge || 0;
-              teams[teamKey].rankingGoals = teamDetails.rankingGoals || 0;
-              teams[teamKey].rankingDef = teamDetails.rankingDef || 0;
-              teams[teamKey].rankingPlayed = teamDetails.rankingPlayed || 0;
+
+              // add configurable ranking data
+              tba_api_ranking_config.forEach(function(el) {
+                teams[teamKey][el.id] = teamDetails[el.id] || 0;
+              });
             }
           });
         });
@@ -423,7 +411,7 @@ ParadoxScout.DataService = (function() {
       })
       // set last time scoring updated from TBA 
       .then(function() {
-        dbRef.child('/events/' + eventKey + '/scores_updated_at').set(Firebase.ServerValue.TIMESTAMP);
+        dbRef.child('/events/' + eventKey + '/scores_updated_at').set(firebase.database.ServerValue.TIMESTAMP);
       })
       .then(next)
       .catch(function(error) { 

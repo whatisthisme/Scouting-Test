@@ -1,3 +1,5 @@
+---
+---
 'use strict';
 
 // will create app namespace *unless* it already exists because another .js
@@ -9,10 +11,10 @@ ParadoxScout.start = function(next) {
   ParadoxScout.CompetitionYear = new Date().getFullYear();
 
   // default event key
-  ParadoxScout.CurrentEventKey = '2016cabb'; 
+  ParadoxScout.CurrentEventKey = '{{ site.scout.currentevent }}'; 
 
   // default minutes to check TBA for scoring updates
-  ParadoxScout.ScoringUpdateIntervalInMinutes = 5;
+  ParadoxScout.ScoringUpdateIntervalInMinutes = 1;
 
   // look for new scoring data every 5 mins
   setInterval(function() {
@@ -48,16 +50,6 @@ ParadoxScout.start = function(next) {
     }
     personalize(user);
   });
-
-  // if user is not authenticated, invalidate cache and route to /login as needed
-  // if (!ParadoxScout.DataService.isAuthenticated()) {
-  //   AppUtility.invalidateCache();
-
-  //   if (location.pathname.indexOf('/login') < 0) return (location.href = siteUrl + '/login');
-  // }
-
-  // update ui with current user info
-  //ParadoxScout.DataService.getCurrentUser(personalize);
 };
 
 // ----------------------------------------------------------------------
@@ -183,42 +175,119 @@ ParadoxScout.getMatchIntelligence = function(eventKey, blueTeams, redTeams, next
       var matchScores = $.map(v.scores.scores, function(item) { return item; });
       var teamReports = $.map(v.reports, function(item) { return item; });
 
+      // # of matches played thus far
+      var matchesPlayed = v.scores.scores ? Object.keys(v.scores.scores).length: 0;
+
+      // # of scouting reports for team
+      var numScoutingReports = Object.keys(teamReports).length
+
+      // get rating scores and counts (the number of times a team was rated for each rating category)
+      var team_scouting_scores = {};
+      $.each(teamReports, function(reportKey, report) {
+        $.each(report, function (ratingKey, ratingVal) {
+          var ratingCount = (team_scouting_scores.hasOwnProperty(ratingKey)) ? team_scouting_scores[ratingKey].count + 1 : 1;
+          var ratingScore = (team_scouting_scores.hasOwnProperty(ratingKey)) ? team_scouting_scores[ratingKey].score + parseFloat(ratingVal) : parseFloat(ratingVal);
+
+          team_scouting_scores[ratingKey] = { score: ratingScore, count: ratingCount };
+        });
+      });
+
+      // include standard scoring/rating attributes
       summary[k] = {
         team_key: v.team_key,
         oprs: v.scores.oprs || 0,
         ccwms: v.scores.ccwms || 0,
-        matches_played: v.scores.scores ? Object.keys(v.scores.scores).length: 0,
+        matches_played: matchesPlayed,
         total_points: matchScores.reduce(function(prevVal, match) { return prevVal + match.totalPoints; }, 0),
         teleop_points: matchScores.reduce(function(prevVal, match) { return prevVal + match.teleopPoints; }, 0),
-        auto_points: matchScores.reduce(function(prevVal, match) { return prevVal + match.autoPoints; }, 0),
-        crossing_points: matchScores.reduce(function(prevVal, match) { return prevVal + (match.autoCrossingPoints + match.teleopCrossingPoints); }, 0),
-        challenge_scale_points: matchScores.reduce(function(prevVal, match) { return prevVal + (match.teleopChallengePoints + match.teleopScalePoints); }, 0),
-        high_goals_count: matchScores.reduce(function(prevVal, match) { return prevVal + (match.autoBouldersHigh + match.teleopBouldersHigh); }, 0),
-        low_goals_count: matchScores.reduce(function(prevVal, match) { return prevVal + (match.autoBouldersLow + match.teleopBouldersLow); }, 0),
+        auto_points: matchScores.reduce(function(prevVal, match) { return prevVal + match.autoPoints; }, 0)
       };
 
-      // iterate through each reports ratings in order to determine # of times each criteria was rated and overall score
-      $.each(teamReports, function(reportKey, report) {
-        $.each(report, function (ratingKey, ratingVal) {
-          if (!ratingKey.startsWith('rating_obstacle') && !ratingKey.startsWith('rating_overall') && !ratingKey.startsWith('rating_scoring')) return;
+      // build the attributes and values from the app_match_intel_config config
+      var intel_attributes = app_match_intel_config.summary_panel.concat(app_match_intel_config.team_stats, app_match_intel_config.match_stats)
+      intel_attributes.forEach(function(attr) {
+        // don't add key if already defaulted
+        if (attr.id in summary[k]) 
+        {
+          summary[k][attr.id] = +summary[k][attr.id].toFixed(attr.decimal_places || 2);
+          return;
+        }
 
-          var ratingCount = (summary[k].hasOwnProperty(ratingKey)) ? summary[k][ratingKey].count + 1 : 1;
+        if (attr.calc_type && attr.calc_type === 'avg') {
+          var num_scout_ratings_used = 0;
+          var num_match_categories_used = 0;
 
-          var ratingScore = 0.0;
-          if(ratingKey.endsWith("_auto")) {
-            ratingScore = ratingCount;
+          var tot_match_scores = 0.0;
+          var scout_scores_avgs = [];
+
+          attr.agg.forEach(function(field) {
+            if (field.startsWith('rating_')) {
+              num_scout_ratings_used += 1
+              scout_scores_avgs.push(field in team_scouting_scores ? team_scouting_scores[field].score / team_scouting_scores[field].count : 0.0);
+            }
+            else {
+              num_match_categories_used += 1
+              tot_match_scores += matchScores.reduce(function(prevVal, match) { return prevVal + (field in match ? match[field] : 0.0); }, 0.0);
+            }
+          });
+
+          var total_score_avgs = []
+          if ( num_scout_ratings_used > 0 ) {
+            var avgScore = scout_scores_avgs.reduce(function(prevVal, avg) { return prevVal + avg; }, 0.0);
+            if ( attr.min || attr.max ) avgScore = avgScore / scout_scores_avgs.length;
+            total_score_avgs.push(avgScore)
           }
-          else {
-            ratingScore = (summary[k].hasOwnProperty(ratingKey)) ? summary[k][ratingKey].score + parseInt(ratingVal) : parseInt(ratingVal);
+          if (num_match_categories_used > 0) {
+            total_score_avgs.push( tot_match_scores / matchesPlayed );
           }
 
-          summary[k][ratingKey] = { score: ratingScore, count: ratingCount };
-        });
+          var final_avg = total_score_avgs.reduce(function(prevVal, avg) { return prevVal + avg; }, 0.0) / total_score_avgs.length;
+          summary[k][attr.id] = +final_avg.toFixed(attr.decimal_places || 2);
+
+          return;
+        }
+
+        if (attr.calc_type && attr.calc_type === 'accuracy') {
+          var tot_made = 0.0
+          var tot_missed = 0.0
+
+          attr.made_ids.forEach(function(field) {
+            if (field.startsWith('rating_')) {
+              tot_made += field in team_scouting_scores ? team_scouting_scores[field].score : 0.0;
+            }
+            else {
+              tot_made += matchScores.reduce(function(prevVal, match) { return prevVal + (field in match ? match[field] : 0.0); }, 0.0);
+            }
+          });
+
+          attr.missed_ids.forEach(function(field) {
+            if (field.startsWith('rating_')) {
+              tot_missed += field in team_scouting_scores ? team_scouting_scores[field].score : 0.0;
+            }
+            else {
+              tot_missed += matchScores.reduce(function(prevVal, match) { return prevVal + (field in match ? match[field] : 0.0); }, 0.0);
+            }
+          });
+
+          var final_acc = (tot_made / (tot_made + tot_missed)) * 100.0 || 0.0;
+          summary[k][attr.id] = { accuracy: +final_acc.toFixed(attr.decimal_places || 2), made_count: tot_made, missed_count: tot_missed };
+
+          return;
+        }
       });
     });
 
+    var blueTeamAvgs = {};
+    var redTeamAvgs = {};
+    for (var k in summary) {
+      $.each(summary[k], function(attr,val) {
+        if (k.startsWith('blue')) blueTeamAvgs[attr] = (blueTeamAvgs[attr] || 0) + (val/3);
+        if (k.startsWith('red')) redTeamAvgs[attr] = (redTeamAvgs[attr] || 0) + (val/3);
+      });
+    };
+    
     //console.log(summary);
-    next(summary);
+    next(summary, blueTeamAvgs, redTeamAvgs);
   });
 };
 
@@ -309,7 +378,7 @@ ParadoxScout.updateEventScores = function(eventKey, next) {
         var rankingData = rankingDetails[0];
 
         // get current datetime
-        var updatedAt = Firebase.ServerValue.TIMESTAMP; // moment().format('YYYY-MM-DD, h:mm:ss a'); //'2016-01-12 2:50pm';
+        var updatedAt = firebase.database.ServerValue.TIMESTAMP; // moment().format('YYYY-MM-DD, h:mm:ss a'); //'2016-01-12 2:50pm';
 
         // get all the match scores by team; 1 entry per team + match
         var teamScores = [];
@@ -331,20 +400,56 @@ ParadoxScout.updateEventScores = function(eventKey, next) {
           if (!match.score_breakdown) return;
 
           // 2016 - combine obstacles names and crossings into ONE key
-          match.score_breakdown.blue[match.score_breakdown.blue.position2] = parseInt(match.score_breakdown.blue.position2crossings) || 0;
-          match.score_breakdown.blue[match.score_breakdown.blue.position3] = parseInt(match.score_breakdown.blue.position3crossings) || 0;
-          match.score_breakdown.blue[match.score_breakdown.blue.position4] = parseInt(match.score_breakdown.blue.position4crossings) || 0;
-
-          match.score_breakdown.red[match.score_breakdown.red.position2] = parseInt(match.score_breakdown.red.position2crossings) || 0;
-          match.score_breakdown.red[match.score_breakdown.red.position3] = parseInt(match.score_breakdown.red.position3crossings) || 0;
-          match.score_breakdown.red[match.score_breakdown.red.position4] = parseInt(match.score_breakdown.red.position4crossings) || 0;
-
-          // add team/match data to array for each alliance
+          
+         
+         var tba_subs = tba_api_scoring_config.filter(function(d) {
+             return('sub' in d);
+         });
+        
+         tba_subs.forEach(function(obj) {
+            match.score_breakdown.blue[match.score_breakdown.blue[obj.id]] = parseInt(match.score_breakdown.blue[obj.sub]) || 0;
+            match.score_breakdown.red[match.score_breakdown.red[obj.id]] = parseInt(match.score_breakdown.red[obj.sub]) || 0;
+         });
+         
+         
+         var tba_aggs = tba_api_scoring_config.filter(function(d) {
+             return('agg' in d);
+         });
+         
+         tba_aggs.forEach(function(obj){
+                match.score_breakdown.blue[obj.id] = obj.agg.reduce(function (preVal, el) {
+                  if (obj.dtype == 'bool') {
+                    return preVal + (match.score_breakdown.blue[el] === true ? 1 : 0);
+                  }
+                  else {
+                    return preVal + parseInt(match.score_breakdown.blue[el] || (obj.default_value || 0));
+                  }
+                }, 0);
+                
+                match.score_breakdown.red[obj.id] = obj.agg.reduce(function (preVal, el) {
+                  if (obj.dtype == 'bool') {
+                    return preVal + (match.score_breakdown.red[el] === true ? 1 : 0);
+                  }
+                  else {
+                    return preVal + parseInt(match.score_breakdown.red[el] || (obj.default_value || 0));
+                  }
+                }, 0);
+         }); 
+          
+          
           $.each (match.alliances.blue.teams, function(i, team) {
+            delete match.score_breakdown.blue['']
+            $.each(match.score_breakdown.blue, function(k,v) {
+              if (typeof(v) === 'boolean') match.score_breakdown.blue[k] = +v
+            });
             teamScores.push({ matchKey: match.key, match_time: match.time, teamKey: team, scores: match.score_breakdown.blue });
           });
 
           $.each (match.alliances.red.teams, function(i, team) {
+            delete match.score_breakdown.red['']
+            $.each(match.score_breakdown.red, function(k,v) {
+              if (typeof(v) === 'boolean') match.score_breakdown.red[k] = +v
+            });
             teamScores.push({ matchKey: match.key, match_time: match.time, teamKey: team, scores: match.score_breakdown.red });
           });
         });
@@ -368,30 +473,22 @@ ParadoxScout.updateEventScores = function(eventKey, next) {
               scores: firstMatch,
               oprs: (statsData && statsData.oprs) ? statsData.oprs[score.teamKey.replace('frc','')] || 0 : 0,
               ccwms: (statsData && statsData.ccwms) ? statsData.ccwms[score.teamKey.replace('frc','')] || 0 : 0,
-              dprs: (statsData && statsData.dprs) ? statsData.dprs[score.teamKey.replace('frc','')] || 0: 0,
-              ranking: 0,
-              rankingScore: 0,
-              rankingAuto: 0,
-              rankingScaleChallenge: 0,
-              rankingGoals: 0,
-              rankingDef: 0,
-              rankingPlayed: 0,
-            };
-
-            $.each (rankingData, function(index, arr) { 
-              var k = score.teamKey.replace('frc','');
-              if (arr[1] === k) {
-                teamEventDetails[score.teamKey].ranking = arr[0];
-                teamEventDetails[score.teamKey].rankingScore = arr[2];
-                teamEventDetails[score.teamKey].rankingAuto = arr[3];
-                teamEventDetails[score.teamKey].rankingScaleChallenge = arr[4];
-                teamEventDetails[score.teamKey].rankingGoals = arr[5];
-                teamEventDetails[score.teamKey].rankingDef = arr[6];
-                teamEventDetails[score.teamKey].rankingPlayed = arr[8];
-              }
+              dprs: (statsData && statsData.dprs) ? statsData.dprs[score.teamKey.replace('frc','')] || 0: 0//,
               
-            });
+
+            };
           }
+        });
+
+        $.each (rankingData, function(index, arr) { 
+          if (index === 0 || arr.length < 1) return;
+
+          var tk = 'frc' + arr[1];
+          if (!tk in teamEventDetails) return;
+
+          tba_api_ranking_config.forEach(function (el) {
+            teamEventDetails[tk][el.id] = arr[el.arr_index];
+          });
         });
 
         // update db
@@ -411,7 +508,7 @@ ParadoxScout.addScoutingReport = function(data, next) {
   var user = ParadoxScout.DataService.getCurrentUser(function(u) {
     // add in scouting metadata
     data.event_id = eventKey;
-    data.scored_at = Firebase.ServerValue.TIMESTAMP; // new Date().getTime() -> e.g., 1456101425447 -or- (new Date()).toString();
+    data.scored_at = firebase.database.ServerValue.TIMESTAMP; // new Date().getTime() -> e.g., 1456101425447 -or- (new Date()).toString();
     data.scored_by = { user_key: u.key, name: u.name, email: u.email };
 
     // console.log(data);
