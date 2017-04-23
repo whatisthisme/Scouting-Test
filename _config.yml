@@ -37,7 +37,7 @@ scout:
     teamkey: 698
     currentevent: azpx # the Event key for the event you want to scout, can be found on TBA
     firebase:
-        rooturl: https://paradox-scout-dc256.firebaseio.com/ # Address of Firebase Server
+        rooturl: https://practice-scouting.firebaseio.com # Address of Firebase Server
         apikey: AIzaSyB5fjNcUYqS3MV2x3gdC9m7eeYa8UzPVrE # API Key of Firebase
         authdomain: practice-scouting.firebaseapp.com # Domain for Firebase to Connect to
         databaseurl: https://practice-scouting.firebaseio.com # Domain for Firebase Database to Connect to
