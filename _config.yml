@@ -49,3 +49,5 @@ scout:
 # You should never have to change these.
 encoding: utf-8
 exclude: [vendor]
+
+theme: jekyll-theme-hacker
