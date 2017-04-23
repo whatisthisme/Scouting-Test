@@ -6,7 +6,7 @@
 ##########################
 
 title: Test Scout # site title, also used in the navbar
-email: lracer53@gmail.com
+email: qwer
 description: "A First Robotics Scouting Application built by Team Paradox 2102" # site description
 baseurl: "https://whatisthisme.github.io/Scouting-Test/" # the subpath of your site, e.g. /blog
 url: "https://whatisthisme.github.io/Scouting-Test/" # the base hostname & protocol for your site
@@ -16,7 +16,7 @@ url: "https://whatisthisme.github.io/Scouting-Test/" # the base hostname & proto
 #######################
 # Customise to how you want
 header:
-    title: Team 698 # the bold, bigger main text
+    title: Team qwer # the bold, bigger main text
     accent: 2017 Scouting System # the smaller, but informative accenting text
     logo: "/images/1425580311.png" # FULL path to image in the header 150x150 works well
 
@@ -34,8 +34,8 @@ footer:
 # These are the most imporant settings, choose carefully
 
 scout:
-    teamkey: frc698
-    currentevent: 2017azpx # the Event key for the event you want to scout, can be found on TBA
+    teamkey: frqwer
+    currentevent: 2qwer # the Event key for the event you want to scout, can be found on TBA
     firebase:
         rooturl: https://practice-scouting.firebaseio.com # Address of Firebase Server
         apikey: AIzaSyB5fjNcUYqS3MV2x3gdC9m7eeYa8UzPVrE # API Key of Firebase
