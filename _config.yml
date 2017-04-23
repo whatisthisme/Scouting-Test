@@ -34,7 +34,7 @@ footer:
 # These are the most imporant settings, choose carefully
 
 scout:
-    teamkey: 698
+    teamkey: frc698
     currentevent: 2017azpx # the Event key for the event you want to scout, can be found on TBA
     firebase:
         rooturl: https://practice-scouting.firebaseio.com # Address of Firebase Server
