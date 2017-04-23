@@ -5,7 +5,7 @@
 ### Base Site settings ###
 ##########################
 
-title: Paradox Scout # site title, also used in the navbar
+title: Test Scout # site title, also used in the navbar
 email: lracer53@gmail.com
 description: "A First Robotics Scouting Application built by Team Paradox 2102" # site description
 baseurl: "https://whatisthisme.github.io/Scouting-Test/" # the subpath of your site, e.g. /blog
