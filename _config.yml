@@ -6,17 +6,17 @@
 ##########################
 
 title: Paradox Scout # site title, also used in the navbar
-email: webmaster@sdarobotics.org
+email: lracer53@gmail.com
 description: "A First Robotics Scouting Application built by Team Paradox 2102" # site description
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "http://sdarobotics.org" # the base hostname & protocol for your site
+url: "http//:testwebsite698.com" # the base hostname & protocol for your site
 
 
 ### Header Settings ###
 #######################
 # Customise to how you want
 header:
-    title: Team Paradox 2102 # the bold, bigger main text
+    title: Team 698 # the bold, bigger main text
     accent: 2017 Scouting System # the smaller, but informative accenting text
     logo: "/images/paradox_logo_2016.png" # FULL path to image in the header 150x150 works well
 
@@ -34,15 +34,15 @@ footer:
 # These are the most imporant settings, choose carefully
 
 scout:
-    teamkey: 2102
-    currentevent: 2017tur # the Event key for the event you want to scout, can be found on TBA
+    teamkey: 698
+    currentevent: azpx # the Event key for the event you want to scout, can be found on TBA
     firebase:
         rooturl: https://paradox-scout-dc256.firebaseio.com/ # Address of Firebase Server
-        apikey: AIzaSyDleJPx9RQChKn4DlLV9nXqMNafP7BvhG0 # API Key of Firebase
-        authdomain: paradox-scout-dc256.firebaseapp.com # Domain for Firebase to Connect to
-        databaseurl: https://paradox-scout-dc256.firebaseio.com # Domain for Firebase Database to Connect to
-        storagebucket: paradox-scout-dc256.appspot.com # Domain for Firebase Storage Bucket to Connect to
-        messagingsenderid: 777517430963 # ID for message sender
+        apikey: AIzaSyB5fjNcUYqS3MV2x3gdC9m7eeYa8UzPVrE # API Key of Firebase
+        authdomain: practice-scouting.firebaseapp.com # Domain for Firebase to Connect to
+        databaseurl: https://practice-scouting.firebaseio.com # Domain for Firebase Database to Connect to
+        storagebucket: practice-scouting.appspot.com # Domain for Firebase Storage Bucket to Connect to
+        messagingsenderid: 224224070119 # ID for message sender
 
 ### Other Jekyll###
 ###################
