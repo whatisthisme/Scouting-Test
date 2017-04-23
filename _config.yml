@@ -8,8 +8,8 @@
 title: Paradox Scout # site title, also used in the navbar
 email: lracer53@gmail.com
 description: "A First Robotics Scouting Application built by Team Paradox 2102" # site description
-baseurl: "http://Hamilton698Scouting.org" # the subpath of your site, e.g. /blog
-url: "http://Hamilton698Scouting.org" # the base hostname & protocol for your site
+baseurl: "https://whatisthisme.github.io/Scouting-Test/" # the subpath of your site, e.g. /blog
+url: "https://whatisthisme.github.io/Scouting-Test/" # the base hostname & protocol for your site
 
 
 ### Header Settings ###
