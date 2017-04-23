@@ -50,4 +50,4 @@ scout:
 encoding: utf-8
 exclude: [vendor]
 
-theme: jekyll-theme-hacker
+theme: jekyll-theme-time-machine
