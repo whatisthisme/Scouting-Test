@@ -8,7 +8,7 @@
 title: Paradox Scout # site title, also used in the navbar
 email: lracer53@gmail.com
 description: "A First Robotics Scouting Application built by Team Paradox 2102" # site description
-baseurl: "" # the subpath of your site, e.g. /blog
+baseurl: "https//:www.Hamilton698Scouting.com" # the subpath of your site, e.g. /blog
 url: "http//:www.testwebsite698.com" # the base hostname & protocol for your site
 
 
@@ -18,7 +18,7 @@ url: "http//:www.testwebsite698.com" # the base hostname & protocol for your sit
 header:
     title: Team 698 # the bold, bigger main text
     accent: 2017 Scouting System # the smaller, but informative accenting text
-    logo: "/images/paradox_logo_2016.png" # FULL path to image in the header 150x150 works well
+    logo: "/images/1425580311.png" # FULL path to image in the header 150x150 works well
 
 ### Footer Settings ###
 #######################
